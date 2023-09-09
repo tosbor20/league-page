@@ -1,7 +1,7 @@
 <script>
 	import Textfield from '@smui/textfield';
   	import Icon from '@smui/textfield/icon';
-	import Transaction from './Transaction.svelte';
+	import TradeTransaction from './TradeTransaction.svelte';
 	import Button, { Label } from '@smui/button';
 	import IconButton from '@smui/icon-button';
 	import Pagination from '../Pagination.svelte';
@@ -10,7 +10,7 @@
 	import { getLeagueTransactions, loadPlayers } from '$lib/utils/helper';
 	import WaiverTransaction from './WaiverTransaction.svelte';
 
-	export let masterOffset = 0, show, playersInfo, query, queryPage, transactions, stale, perPage, postUpdate=false, leagueTeamManagers;
+	export let show, playersInfo, query, queryPage, transactions, stale, perPage, postUpdate=false, leagueTeamManagers;
 	const oldQuery = query;
 	let page = queryPage || 0;
 
@@ -82,13 +82,23 @@
 
 	let lastUpdate = new Date;
 
+    let timer;
+
+	const debounce = (dest) => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+            goto(dest,{noscroll: true,  keepfocus: true});
+		}, 750);
+	}
+
 	const search = () => {
 		lastUpdate = new Date;
 		query = query.trimLeft();
 		if(query.trim() == oldQuery) return;
 		page = 0;
 		if(postUpdate) {
-            goto(`/transactions?show=${show}&query=${query.trim()}&page=${page+1}`, {noscroll: true,  keepfocus: true});
+            const dest = `/transactions?show=${show}&query=${query.trim()}&page=${page+1}`;
+            debounce(dest);
 		}
 	}
 
@@ -261,7 +271,7 @@
                 {#if transaction.type == "waiver"}
 				    <WaiverTransaction {players} {transaction} {leagueTeamManagers} />
                 {:else}
-				    <Transaction {players} {transaction} masterOffset={masterOffset + 15} {leagueTeamManagers} />
+				    <TradeTransaction {players} {transaction} {leagueTeamManagers} />
                 {/if}
 			{/each}
 		</div>

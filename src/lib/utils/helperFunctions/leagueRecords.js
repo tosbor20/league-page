@@ -140,8 +140,8 @@ const processRegularSeason = async ({rosters, leagueData, curSeason, week, regul
 		week = leagueData.settings.playoff_week_start - 1;
 	}
 
-	for(const roster of rosters) {
-		analyzeRosters({year, roster, regularSeason});
+	for(const rosterID in rosters) {
+		analyzeRosters({year, roster: rosters[rosterID], regularSeason});
 	}
 
 	// loop through each week of the season
@@ -160,7 +160,7 @@ const processRegularSeason = async ({rosters, leagueData, curSeason, week, regul
 		const data = matchupRes.json();
 		matchupsJsonPromises.push(data)
 		if (!matchupRes.ok) {
-			throw new Error(data);
+			console.error(data);
 		}
 	}
 	const matchupsData = await waitForAll(...matchupsJsonPromises).catch((err) => { console.error(err); });
@@ -323,7 +323,11 @@ const processMatchups = ({matchupWeek, seasonPointsRecord, record, startWeek, ma
 		const matchup = matchups[matchupKey];
 		let home = matchup[0];
 		let away = matchup[1];
-		if(matchup[0].fpts < matchup[1].fpts) {
+
+        // if there are no teams or only one, continue
+        if(!away || !home) continue;
+        
+		if(home.fpts < away.fpts) {
 			home = matchup[1];
 			away = matchup[0];
 		}
@@ -398,6 +402,7 @@ const processPlayoffs = async ({curSeason, playoffRecords, year, week, rosters})
 		const fptsPerGame = round(pSD.fptsFor / (pSD.wins + pSD.losses + pSD.ties));
 		pSD.fptsPerGame = fptsPerGame;
 		pSD.year = year;
+		pSD.rosterID = rosterID;
 
 		// add season long points entry
 		playoffRecords.addSeasonLongPoints({
@@ -408,7 +413,7 @@ const processPlayoffs = async ({curSeason, playoffRecords, year, week, rosters})
 		})
 
 		// update the manager records for this roster ID
-        const managers = getManagers(rosters[rosterID - 1]);
+        const managers = getManagers(rosters[rosterID]);
 		playoffRecords.updateManagerRecord(managers, pSD);
 	}
 

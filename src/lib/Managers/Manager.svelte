@@ -25,11 +25,9 @@
 
     $: teamTransactions = transactions.filter(t => t.rosters.includes(parseInt(rosterID)));
 
-    $: rosterArrNum = rosterID-1;
+    $: roster = rosters[rosterID];
 
-    $: roster = rosters[rosterArrNum];
-
-    $: coOwners = year && rosterID ? leagueTeamManagers.teamManagersMap[year][rosterID].managers.length > 0 : roster.co_owners;
+    $: coOwners = year && rosterID ? leagueTeamManagers.teamManagersMap[year][rosterID].managers.length > 1 : roster.co_owners;
 
     $: commissioner = viewManager.managerID ? leagueTeamManagers.users[viewManager.managerID].is_owner : false;
 
@@ -58,21 +56,13 @@
     })
 
     const changeManager = (newManager, noscroll = false) => {
+        if(!newManager) {
+            goto(`/managers`);
+        }
         manager = newManager;
-
-        goto(`/manager?manager=${manager}`, {noscroll})
+        goto(`/manager?manager=${newManager}`, {noscroll});
     }
-
-    let el, masterOffset, innerWidth;
-
-    const setOffset = (w) => {
-        return el?.getBoundingClientRect() ? el?.getBoundingClientRect().left  : 0;
-    }
-
-    $: masterOffset = setOffset(innerWidth);
 </script>
-
-<svelte:window bind:innerWidth={innerWidth} />
 
 <style>
     .managerContainer {
@@ -310,7 +300,7 @@
 
     {#if !loading}
         <!-- Favorite player -->
-        <ManagerFantasyInfo {viewManager} {players} />
+        <ManagerFantasyInfo {viewManager} {players} {changeManager} />
     {/if}
 
     <ManagerAwards {leagueTeamManagers} tookOver={viewManager.tookOver} {awards} {records} {rosterID} managerID={viewManager.managerID} />
@@ -326,7 +316,7 @@
     {/if}
 
     <h3>Team Transactions</h3>
-    <div class="managerConstrained" bind:this={el}>
+    <div class="managerConstrained">
         {#if loading}
             <!-- promise is pending -->
             <div class="loading">
@@ -334,7 +324,7 @@
                 <LinearProgress indeterminate />
             </div>
         {:else}
-            <TransactionsPage {playersInfo} transactions={teamTransactions} {leagueTeamManagers} {masterOffset} show='both' query='' page={0} perPage={5} />
+            <TransactionsPage {playersInfo} transactions={teamTransactions} {leagueTeamManagers} show='both' query='' page={0} perPage={5} />
         {/if}
     </div>
 
